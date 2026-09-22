@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>El Gran Reto del Asesor</title>
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;font-family:Arial,Helvetica,sans-serif;
+  background:linear-gradient(135deg,#25124d,#5c3fb2 48%,#15182f);
+  color:#fff;min-height:100vh;padding:18px;
+}
+.app{max-width:1050px;margin:auto}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.logo{font-size:clamp(25px,5vw,42px);font-weight:900}
+.badge{background:#ffffff18;border:1px solid #ffffff35;border-radius:999px;padding:9px 14px}
+.panel{
+  background:#ffffff12;border:1px solid #ffffff25;border-radius:24px;
+  padding:22px;margin-top:18px;backdrop-filter:blur(8px)
+}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.stat{background:#0d0c20aa;border-radius:16px;padding:12px;text-align:center}
+.stat b{display:block;font-size:24px;color:#ffd76a}
+.progress{height:10px;background:#ffffff18;border-radius:99px;overflow:hidden;margin:16px 0}
+.progress i{display:block;height:100%;background:#ffd76a;width:0;transition:.3s}
+.start{text-align:center;padding:25px}
+.start h1{font-size:clamp(32px,7vw,60px);margin:5px 0}
+.start p{font-size:18px;color:#ddd;line-height:1.5}
+button{
+  border:0;border-radius:14px;padding:13px 18px;font-size:16px;font-weight:800;
+  cursor:pointer;min-height:46px;transition:.15s
+}
+button:hover{transform:translateY(-2px)}
+.primary{background:#ffd76a;color:#25124d}
+.secondary{background:#ffffff18;color:#fff;border:1px solid #ffffff35}
+.hidden{display:none!important}
+.levels{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:15px 0}
+.level{padding:8px 12px;border-radius:999px;background:#ffffff12;color:#bbb}
+.level.active{background:#ffd76a;color:#25124d;font-weight:900}
+.gamehead{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
+.timer{
+  width:82px;height:82px;border-radius:50%;display:grid;place-items:center;
+  border:8px solid #ffd76a;background:#111027;font-size:26px;font-weight:900
+}
+.timer.danger{border-color:#ff6b6b;color:#ff8a8a}
+.card{
+  background:#fff;color:#202033;border-radius:22px;padding:22px;margin-top:16px;
+  position:relative;overflow:hidden
+}
+.card:before{content:"";position:absolute;top:0;left:0;right:0;height:7px;background:#ffd76a}
+.category{font-size:13px;font-weight:900;color:#6a50c7;text-transform:uppercase;letter-spacing:.08em}
+.client{font-size:18px;line-height:1.55;margin:12px 0}
+.question{font-size:clamp(20px,4vw,28px);font-weight:900;line-height:1.3}
+.answers{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px}
+.answer{
+  background:#f0edff;color:#29253b;text-align:left;border:2px solid transparent;
+  min-height:65px
+}
+.answer:hover{background:#e3ddff}
+.answer.correct{background:#c8f7d4;border-color:#27a94b}
+.answer.wrong{background:#ffd0d0;border-color:#d33}
+.answer:disabled{cursor:default;transform:none}
+.feedback{margin-top:15px;padding:14px;border-radius:14px;font-weight:700;line-height:1.45}
+.controls{display:flex;justify-content:space-between;gap:10px;margin-top:15px;flex-wrap:wrap}
+.wheelbox{text-align:center}
+canvas{max-width:100%;width:330px;height:330px}
+.wheel-pointer{font-size:36px;margin-bottom:-20px;position:relative;z-index:2}
+.wheel-result{font-size:22px;font-weight:900;min-height:30px}
+.final{text-align:center}
+.final .score{font-size:64px;font-weight:900;color:#ffd76a}
+.meter{height:16px;background:#ffffff18;border-radius:99px;overflow:hidden;max-width:500px;margin:18px auto}
+.meter i{display:block;height:100%;background:#ffd76a}
+.small{color:#c9c6d8;font-size:14px}
+@media(max-width:700px){
+  .stats{grid-template-columns:1fr 1fr}
+  .answers{grid-template-columns:1fr}
+  .card{padding:17px}
+  canvas{width:280px;height:280px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div class="logo">🏆 EL GRAN RETO DEL ASESOR</div>
+    <div class="badge">María vs. el reto del cliente</div>
+  </div>
+
+  <section id="start" class="panel start">
+    <div style="font-size:70px">🎤🎯🎲</div>
+    <h1>¿Eres un gran asesor?</h1>
+    <p>
+      Responde preguntas sobre escucha activa, necesidades del cliente,
+      empatía, objeciones, comunicación y soluciones.
+      Hay <b>niveles</b>, <b>ruleta</b>, <b>tarjetas</b>, sonidos y
+      <b>30 segundos</b> para cada pregunta.
+    </p>
+    <button class="primary" id="startBtn">🚀 COMENZAR CONCURSO</button>
+    <p class="small">Consejo: primero escucha, luego pregunta y finalmente ofrece una solución.</p>
+  </section>
+
+  <section id="game" class="panel hidden">
+    <div class="stats">
+      <div class="stat">⭐<b id="score">0</b>Puntos</div>
+      <div class="stat">❤️<b id="lives">3</b>Vidas</div>
+      <div class="stat">🎯<b id="round">1</b>Ronda</div>
+      <div class="stat">🔥<b id="streak">0</b>Racha</div>
+    </div>
+    <div class="levels">
+      <span class="level active" id="lv1">NIVEL 1</span>
+      <span class="level" id="lv2">NIVEL 2</span>
+      <span class="level" id="lv3">NIVEL 3</span>
+    </div>
+    <div class="progress"><i id="progress"></i></div>
+
+    <div class="gamehead">
+      <div>
+        <h2 id="levelTitle">🟢 Nivel 1 · Escucha activa</h2>
+        <div class="small">Lee la tarjeta del cliente y elige la mejor respuesta.</div>
+      </div>
+      <div class="timer" id="timer">30</div>
+    </div>
+
+    <div class="card">
+      <div class="category" id="category">TARJETA DEL CLIENTE</div>
+      <div class="client" id="client"></div>
+      <div class="question" id="question"></div>
+      <div class="answers" id="answers"></div>
+      <div id="feedback" class="feedback hidden"></div>
+      <div class="controls">
+        <button class="secondary" id="wheelBtn">🎡 Usar ruleta</button>
+        <button class="primary hidden" id="nextBtn">➡️ Siguiente tarjeta</button>
+      </div>
+      <div id="wheelArea" class="wheelbox hidden">
+        <div class="wheel-pointer">▼</div>
+        <canvas id="wheel" width="330" height="330"></canvas>
+        <div class="wheel-result" id="wheelResult"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="final" class="panel final hidden">
+    <div style="font-size:70px">🏆</div>
+    <h1>¡Concurso terminado!</h1>
+    <div class="score" id="finalScore">0</div>
+    <p id="finalText"></p>
+    <div class="meter"><i id="finalMeter"></i></div>
+    <button class="primary" id="restartBtn">🔄 JUGAR DE NUEVO</button>
+  </section>
+</div>
+
+<script>
+(() => {
+  const questions = [
+    {level:1,cat:"Escucha activa",client:"👨 Andrés: «Mi plan se queda sin datos antes de terminar el mes y siento que pago demasiado».",
+     q:"¿Qué debería hacer María primero?",
+     a:["Ofrecerle inmediatamente el plan más caro.","Hacer preguntas para conocer sus necesidades.","Decirle que todos los planes son iguales.","Presionarlo para comprar."],c:1,e:"Primero se escucha y se investiga la necesidad antes de ofrecer una solución."},
+    {level:1,cat:"Identificar necesidades",client:"👨 Andrés: «Uso el celular para trabajar, hacer videollamadas y mensajería».",
+     q:"¿Cuál pregunta ayuda mejor a identificar su necesidad?",
+     a:["¿Quiere el plan más barato?","¿Qué cantidad de datos utiliza aproximadamente para trabajar?","¿Por qué no cambia de operador?","¿Quiere comprarlo ahora?"],c:1,e:"Una pregunta concreta permite entender cómo usa el servicio."},
+    {level:1,cat:"Comunicación",client:"👩 Cliente: «No entiendo mucho de tecnología y no quiero términos complicados».",
+     q:"¿Cómo debería comunicarse María?",
+     a:["Usando muchos términos técnicos.","Hablando muy rápido.","Con explicaciones claras, sencillas y personalizadas.","Diciéndole que investigue sola."],c:2,e:"La comunicación debe adaptarse a las características del cliente."},
+    {level:1,cat:"Empatía",client:"👨 Cliente: «Tengo poco tiempo. Dígame rápidamente qué me puede ofrecer».",
+     q:"¿Qué demuestra empatía en esta situación?",
+     a:["Ignorar que tiene poco tiempo.","Dar una explicación muy larga.","Ser breve y centrarse en lo que necesita.","Terminar la llamada inmediatamente."],c:2,e:"Adaptar la conversación al tiempo del cliente demuestra atención a su situación."},
+
+    {level:2,cat:"Manejo de objeciones",client:"👨 Andrés: «Está muy caro. Creo que seguiré con mi plan actual».",
+     q:"¿Cuál sería una respuesta adecuada?",
+     a:["«Tiene que comprarlo».","«No está caro, usted se equivoca».","«Entiendo. ¿Qué aspecto del precio le preocupa más?»","«Entonces no puedo ayudarlo»."],c:2,e:"La objeción se debe escuchar y explorar, no discutir ni presionar."},
+    {level:2,cat:"Motivaciones",client:"👨 Andrés: «Quiero ahorrar dinero, pero no quiero perder calidad».",
+     q:"¿Cuál es su motivación principal?",
+     a:["Comprar lo más caro.","Ahorrar sin perder calidad.","Dejar de usar internet.","Cambiar de trabajo."],c:1,e:"Su motivación combina ahorro y calidad del servicio."},
+    {level:2,cat:"Solución personalizada",client:"👩 Cliente: «Trabajo desde casa y necesito estar comunicada todo el tiempo».",
+     q:"¿Qué debe considerar María?",
+     a:["Solo el precio.","Las necesidades específicas de la cliente.","El producto más caro.","Una oferta cualquiera."],c:1,e:"La solución debe responder a la situación real del cliente."},
+    {level:2,cat:"Decisión del cliente",client:"👨 Andrés: «No estoy seguro de cambiar mi plan. Quiero pensarlo».",
+     q:"¿Cuál es la mejor reacción?",
+     a:["Presionarlo para comprar.","Escuchar sus dudas y resolverlas.","Decirle que se equivoca.","Cortar la conversación."],c:1,e:"Resolver dudas sin presión favorece una decisión informada."},
+
+    {level:3,cat:"Canal de seguimiento",client:"👨 Andrés: «Quiero revisar la información tranquilamente después de la llamada».",
+     q:"¿Qué canal puede usar María para enviar los detalles?",
+     a:["WhatsApp.","No enviar nada.","Enviar información diferente a la conversación.","Llamarlo repetidamente."],c:0,e:"En el ejemplo, WhatsApp permite enviar la información para que el cliente la revise con calma."},
+    {level:3,cat:"Venta consultiva",client:"👩 Cliente: «No sé exactamente qué necesito, pero mi servicio actual no me funciona».",
+     q:"¿Qué debe hacer María?",
+     a:["Elegir por ella sin preguntar.","Preguntar, escuchar y detectar la necesidad real.","Ofrecer el producto más costoso.","Finalizar la atención."],c:1,e:"La venta consultiva comienza comprendiendo la situación del cliente."},
+    {level:3,cat:"Hechos vs. palabras",client:"👨 Cliente: «Me prometieron una solución antes y no funcionó».",
+     q:"¿Qué respuesta ayuda a recuperar la confianza?",
+     a:["«Eso no es problema mío».","«No se preocupe, créame».","«Entiendo su preocupación. Revisemos exactamente qué necesita».","«Tiene que confiar en nosotros»."],c:2,e:"La respuesta reconoce la preocupación y propone revisar la necesidad concreta."},
+    {level:3,cat:"Cierre sin presión",client:"👨 Andrés: «Me interesa, pero todavía tengo una duda».",
+     q:"¿Qué debería hacer María?",
+     a:["Ignorar la duda.","Presionarlo para cerrar.","Preguntar cuál es la duda y responder con claridad.","Decirle que compre primero."],c:2,e:"Antes de cerrar, es importante atender la duda del cliente."}
+  ];
+
+  const $ = id => document.getElementById(id);
+  let deck=[], index=0, score=0, lives=3, streak=0, time=30, timerId=null, answered=false;
+  let audioCtx=null;
+
+  function sound(type){
+    try{
+      audioCtx ||= new (window.AudioContext || window.webkitAudioContext)();
+      const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+      const now=audioCtx.currentTime;
+      const seq=type==="ok"?[660,880]:type==="bad"?[220,160]:type==="tick"?[520]:[330,440,660];
+      seq.forEach((f,i)=>{o.frequency.setValueAtTime(f,now+i*.09)});
+      g.gain.setValueAtTime(.0001,now); g.gain.exponentialRampToValueAtTime(.12,now+.01);
+      g.gain.exponentialRampToValueAtTime(.0001,now+seq.length*.09+.05);
+      o.connect(g);g.connect(audioCtx.destination);o.start(now);o.stop(now+seq.length*.09+.06);
+    }catch(e){}
+  }
+
+  function shuffle(arr){ return [...arr].sort(()=>Math.random()-.5); }
+
+  function start(){
+    $("start").classList.add("hidden");
+    $("final").classList.add("hidden");
+    $("game").classList.remove("hidden");
+    deck=shuffle(questions);index=0;score=0;lives=3;streak=0;
+    loadQuestion();
+  }
+
+  function levelName(n){return n===1?"🟢 Nivel 1 · Escucha activa":n===2?"🟡 Nivel 2 · Necesidades y objeciones":"🔴 Nivel 3 · Venta consultiva";}
+
+  function loadQuestion(){
+    clearInterval(timerId);answered=false;time=30;
+    const p=deck[index];
+    $("round").textContent=index+1;
+    $("score").textContent=score;
+    $("lives").textContent=lives;
+    $("streak").textContent=streak;
+    $("levelTitle").textContent=levelName(p.level);
+    $("category").textContent=p.cat;
+    $("client").textContent=p.client;
+    $("question").textContent=p.q;
+    $("feedback").classList.add("hidden");
+    $("nextBtn").classList.add("hidden");
+    $("wheelArea").classList.add("hidden");
+    $("wheelResult").textContent="";
+    $("wheelBtn").disabled=false;
+    ["lv1","lv2","lv3"].forEach((id,i)=>$(id).classList.toggle("active",i+1===p.level));
+    $("progress").style.width=((index/deck.length)*100)+"%";
+    const box=$("answers");box.innerHTML="";
+    p.a.forEach((text,i)=>{
+      const b=document.createElement("button");b.className="answer";b.textContent=String.fromCharCode(65+i)+". "+text;
+      b.addEventListener("click",()=>answer(i,b));box.appendChild(b);
+    });
+    updateTimer();
+    timerId=setInterval(()=>{time--;updateTimer();if(time<=5&&time>0)sound("tick");if(time<=0){clearInterval(timerId);timeout();}},1000);
+  }
+
+  function updateTimer(){
+    $("timer").textContent=time;
+    $("timer").classList.toggle("danger",time<=8);
+  }
+
+  function lockAnswers(){
+    document.querySelectorAll(".answer").forEach(b=>b.disabled=true);
+  }
+
+  function answer(choice,btn){
+    if(answered)return;answered=true;clearInterval(timerId);lockAnswers();
+    const p=deck[index];
+    if(choice===p.c){
+      const bonus=100+time*5+(streak*20);
+      score+=bonus;streak++;
+      btn.classList.add("correct");sound("ok");
+      showFeedback("correct","✅ ¡Correcto! +"+bonus+" puntos.<br>"+p.e);
+    }else{
+      lives--;streak=0;btn.classList.add("wrong");
+      document.querySelectorAll(".answer")[p.c].classList.add("correct");sound("bad");
+      showFeedback("wrong","❌ No es la mejor respuesta.<br><b>Respuesta:</b> "+p.a[p.c]+"<br>"+p.e);
+    }
+    $("score").textContent=score;$("lives").textContent=lives;$("streak").textContent=streak;
+    $("nextBtn").classList.remove("hidden");
+  }
+
+  function timeout(){
+    if(answered)return;answered=true;lockAnswers();
+    const p=deck[index];lives--;streak=0;
+    document.querySelectorAll(".answer")[p.c].classList.add("correct");
+    $("lives").textContent=lives;$("streak").textContent=streak;sound("bad");
+    showFeedback("wrong","⏰ ¡Se acabó el tiempo!<br><b>Respuesta:</b> "+p.a[p.c]+"<br>"+p.e);
+    $("nextBtn").classList.remove("hidden");
+  }
+
+  function showFeedback(kind,text){
+    const f=$("feedback");f.className="feedback";f.innerHTML=text;
+    f.style.background=kind==="correct"?"#dff8e5":"#ffe0e0";
+    f.style.color=kind==="correct"?"#176b2b":"#8b2020";
+  }
+
+  function next(){
+    if(lives<=0){finish();return}
+    index++;
+    if(index>=deck.length){finish();return}
+    loadQuestion();
+  }
+
+  function finish(){
+    clearInterval(timerId);
+    $("game").classList.add("hidden");$("final").classList.remove("hidden");
+    $("finalScore").textContent=score+" pts";
+    const max=deck.reduce((s,p)=>s+250,0);
+    const pct=Math.min(100,Math.round(score/Math.max(1,max)*100));
+    $("finalMeter").style.width=pct+"%";
+    $("finalText").textContent =
+      pct>=80?"🌟 ¡Excelente! Demostraste muy buenas habilidades de atención al cliente.":
+      pct>=55?"👏 ¡Muy bien! Tienes buenas bases; sigue practicando la escucha activa.":
+      "💪 Buen intento. Recuerda: primero escucha, después identifica la necesidad y finalmente ofrece una solución.";
+    sound("win");
+  }
+
+  function spinWheel(){
+    if($("wheelArea").classList.contains("hidden"))$("wheelArea").classList.remove("hidden");
+    const canvas=$("wheel"),ctx=canvas.getContext("2d"),cx=165,cy=165,r=145;
+    const items=["Pregunta abierta","Escucha activa","Empatía","Objeción","Necesidad","Solución"];
+    let rot=0,duration=1800,start=null;
+    $("wheelBtn").disabled=true;$("wheelResult").textContent="Girando...";
+    function draw(){
+      ctx.clearRect(0,0,330,330);
+      items.forEach((item,i)=>{
+        const a0=rot+i*Math.PI*2/items.length,a1=rot+(i+1)*Math.PI*2/items.length;
+        ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,a0,a1);ctx.closePath();
+        ctx.fillStyle=i%2?"#8c72d8":"#ffd76a";ctx.fill();
+        ctx.save();ctx.translate(cx,cy);ctx.rotate((a0+a1)/2);
+        ctx.fillStyle=i%2?"#fff":"#25124d";ctx.font="bold 14px Arial";ctx.textAlign="right";ctx.fillText(item,r-12,5);ctx.restore();
+      });
+      ctx.beginPath();ctx.arc(cx,cy,30,0,Math.PI*2);ctx.fillStyle="#25124d";ctx.fill();
+      if(start===null)start=performance.now();
+      const t=Math.min(1,(performance.now()-start)/duration);
+      rot=(Math.pow(1-t,3)*Math.PI*10)+Math.PI*2*t*3;
+      if(t<1)requestAnimationFrame(draw);else{
+        const chosen=items[Math.floor(Math.random()*items.length)];
+        $("wheelResult").textContent="🎯 Reto de la ruleta: "+chosen;
+        $("wheelBtn").disabled=false;
+      }
+    }
+    start=null;requestAnimationFrame(draw);
+  }
+
+  $("startBtn").addEventListener("click",start);
+  $("nextBtn").addEventListener("click",next);
+  $("restartBtn").addEventListener("click",start);
+  $("wheelBtn").addEventListener("click",spinWheel);
+})();
+</script>
+</body>
+</html>
